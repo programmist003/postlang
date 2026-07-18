@@ -25,7 +25,9 @@ for line in sys.stdin:
         if hold_symbol_buffer:
             continue
         symbol_str = "".join(symbol)
-        hold_symbols_buffer = SYMBOLS_DICT.get(symbol_str, DEFAULT_FILTER)(symbols_buffer, symbol_str)
+        hold_symbols_buffer = SYMBOLS_DICT.get(symbol_str, DEFAULT_FILTER)(
+            symbols_buffer, symbol_str
+        )
         symbol = []
         if hold_symbols_buffer:
             continue
@@ -33,6 +35,12 @@ for line in sys.stdin:
         symbols_buffer = []
         # print(f"{char = }")
 
-symbols_buffer.append("".join(symbol))
+CHAR_OPS_DICT.get(char, DEFAULT_FILTER)(symbol, char)
+symbol_str = "".join(symbol)
+SYMBOLS_DICT.get(symbol_str, DEFAULT_FILTER)(symbols_buffer, symbol_str)
+symbol = []
 ast.append(symbols_buffer)
+symbols_buffer = []
+# print(f"{char = }")
+
 print(ast)
