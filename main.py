@@ -30,7 +30,7 @@ CHAR_OPS_DICT: Mapping = {
 SYMBOLS_DICT = {"": lambda buffer, new: True, ",": lambda buffer, new: False}
 
 CMDS_DICT: Dict[Any, Filter[Any]] = {
-    tuple(): lambda buffer, new: not _cover_list(buffer)
+    tuple(): lambda buffer, new: _cover_list(buffer)
 }
 
 DEFAULT_FILTER: Filter = lambda buffer, new: not buffer.append(new)
@@ -59,19 +59,29 @@ def process_buffer(
     buffer.clear()
     return flushed
 
-def process_buffers(buffers, filters, posts, new):
+def process_buffers(buffers, filters, posts, new, forced_flush: bool = False):
     for buffer, filter, post in zip(buffers, filters, posts):
-        new = process_buffer(buffer, new, filter, post)
+        new = process_buffer(buffer, new, filter, post, forced_flush)
         if new is None:
-            return
+            return buffers
 
+buffers = [symbol, symbols_buffer, ast]
+filters = [
+    dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), 
+    dict_filter(SYMBOLS_DICT, DEFAULT_FILTER), 
+    dict_filter(CMDS_DICT, DEFAULT_FILTER)
+]
+
+posts = [POST_SYMBOL, POST_SYMBOLS_BUFFER, lambda x: x]
 
 for line in sys.stdin:
     for char in line:
-        hold_symbol_buffer = dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER)(symbol, char)
-        if hold_symbol_buffer:
+        process_buffers(buffers, filters, posts, char)
+        continue
+        new = process_buffer(symbol, char, dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), POST_SYMBOL)    
+        tmp = new
+        if tmp is None:
             continue
-        tmp = POST_SYMBOL(symbol)
         hold_symbols_buffer = SYMBOLS_DICT.get(tmp, DEFAULT_FILTER)(symbols_buffer, tmp)
         symbol = []
         if hold_symbols_buffer:
