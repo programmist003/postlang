@@ -17,7 +17,7 @@ class Filter(Protocol, Generic[T]):
         pass
 
 
-class Converter(Protocol, Generic[T1, T2]):
+class Converter(Protocol, Generic[T1, T2]): # type: ignore
     def __call__(self, x: T1) -> T2: # type: ignore
         pass
 
