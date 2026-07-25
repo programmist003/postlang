@@ -54,12 +54,11 @@ def _cover_list(x: list):
     x.append(covered)
     return True
     
-def process_parsers(parsers: Iterable[Parser], new):
+def push_one_to(parsers: Iterable[Parser], new):
     for parser in parsers:
         new = parser.push_one(new)
         if new is None:
-            continue
-    return
+            return
 
 def main():
     print("Enter Ctrl + Z and Enter on WIndows or Ctrl + D on UNIX-like to send EOF")
@@ -85,19 +84,10 @@ def main():
     chars_parser = Parser(dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), POST_SYMBOL)
     symbols_parser = Parser(dict_filter(SYMBOLS_DICT, DEFAULT_FILTER), POST_SYMBOLS_BUFFER)
     cmds_parser = Parser(dict_filter(CMDS_DICT, DEFAULT_FILTER))
+    parsers = [chars_parser, symbols_parser, cmds_parser]
     buffer = []
     for char in read_input_by_char():
-        tmp = chars_parser.push_one(char)
-        if tmp is None:
-            continue
-        tmp = symbols_parser.push_one(tmp)
-        if tmp is None:
-            continue
-        tmp = cmds_parser.push_one(tmp)
-        if tmp is None:
-            continue
-        print(tmp)
-        buffer.append(tmp)
+        push_one_to(parsers, char)
     tmp = chars_parser.flush()
     tmp = symbols_parser.push_one(tmp)
     if not symbols_parser.is_flushed():
