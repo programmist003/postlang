@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, Final, Generic, List, Mapping, Optional, Protocol, TypeVar
+from typing import Any, Dict, Final, Generator, Generic, List, Mapping, Optional, Protocol, TypeVar, Union
 
 T = TypeVar("T")
 T1 = TypeVar("T1")
@@ -22,12 +22,15 @@ class Converter(Protocol, Generic[T1, T2]):
         pass
 
 
-CHAR_OPS_DICT: Mapping = {
+CHAR_OPS_DICT: Mapping[str, Filter[Any]] = {
     " ": lambda buffer, new: False,
     "\n": lambda buffer, new: False,
 }
 
-SYMBOLS_DICT = {"": lambda buffer, new: True, ",": lambda buffer, new: False}
+SYMBOLS_DICT: Mapping[str, Filter[Any]] = {
+    "": lambda buffer, new: True, 
+    ",": lambda buffer, new: False,
+}
 
 CMDS_DICT: Dict[Any, Filter[Any]] = {
     tuple(): lambda buffer, new: _cover_list(buffer)
@@ -43,7 +46,7 @@ POST_SYMBOLS_BUFFER: Final[Converter] = lambda x: tuple(x)
 ast: list = []
 
 
-def dict_filter(cases: Dict[T, Filter[T]], default_filter: Filter[T]) -> Filter[T]:
+def dict_filter(cases: Mapping[T, Filter[T]], default_filter: Filter[T]) -> Filter[T]:
     return lambda buffer, new: cases.get(new, default_filter)(buffer, new)
 
 def process_buffer(
@@ -65,6 +68,11 @@ def process_buffers(buffers, filters, posts, new, forced_flush: bool = False):
         if new is None:
             return buffers
 
+def read_input_by_char() -> Generator[str, None, None]:
+    for line in sys.stdin:
+        for char in line:
+            yield char
+
 buffers = [symbol, symbols_buffer, ast]
 filters = [
     dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), 
@@ -72,24 +80,12 @@ filters = [
     dict_filter(CMDS_DICT, DEFAULT_FILTER)
 ]
 
-posts = [POST_SYMBOL, POST_SYMBOLS_BUFFER, lambda x: x]
+posts = [POST_SYMBOL, POST_SYMBOLS_BUFFER, lambda x: x[0]]
 
 for line in sys.stdin:
     for char in line:
         process_buffers(buffers, filters, posts, char)
         continue
-        new = process_buffer(symbol, char, dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), POST_SYMBOL)    
-        tmp = new
-        if tmp is None:
-            continue
-        hold_symbols_buffer = SYMBOLS_DICT.get(tmp, DEFAULT_FILTER)(symbols_buffer, tmp)
-        symbol = []
-        if hold_symbols_buffer:
-            continue
-        tmp = POST_SYMBOLS_BUFFER(symbols_buffer)
-        # print({tmp})
-        hold_ast = CMDS_DICT.get(tmp, DEFAULT_FILTER)(ast, tmp)
-        symbols_buffer = []
 
 hold_symbol_buffer = CHAR_OPS_DICT.get(char, DEFAULT_FILTER)(symbol, char)
 tmp = POST_SYMBOL(symbol)
