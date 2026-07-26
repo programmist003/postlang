@@ -60,7 +60,12 @@ def read_input_by_char() -> Generator[str, None, None]:
             yield char
 
 
-def dict_filter(cases: Mapping[T, Filter[T]], default_filter: Filter[T]) -> Filter[T]:
+DEFAULT_FILTER: Filter = lambda buffer, new: not buffer.append(new)
+
+
+def dict_filter(
+    cases: Mapping[T, Filter[T]], default_filter: Filter[T] = DEFAULT_FILTER
+) -> Filter[T]:
     return lambda buffer, new: cases.get(new, default_filter)(buffer, new)
 
 
@@ -105,13 +110,9 @@ def main():
 
     CMDS_DICT: Dict[Any, Filter] = {tuple(): lambda buffer, new: _cover_list(buffer)}
 
-    DEFAULT_FILTER: Filter = lambda buffer, new: not buffer.append(new)
-
-    chars_parser = Parser(dict_filter(CHAR_OPS_DICT, DEFAULT_FILTER), POST_SYMBOL)
-    symbols_parser = Parser(
-        dict_filter(SYMBOLS_DICT, DEFAULT_FILTER), POST_SYMBOLS_BUFFER
-    )
-    cmds_parser = Parser(dict_filter(CMDS_DICT, DEFAULT_FILTER))
+    chars_parser = Parser(dict_filter(CHAR_OPS_DICT), POST_SYMBOL)
+    symbols_parser = Parser(dict_filter(SYMBOLS_DICT), POST_SYMBOLS_BUFFER)
+    cmds_parser = Parser(dict_filter(CMDS_DICT))
     parsers = [chars_parser, symbols_parser, cmds_parser]
     for char in read_input_by_char():
         push_one_to(parsers, char)
