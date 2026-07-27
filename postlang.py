@@ -11,7 +11,6 @@ from typing import (
     Optional,
     Protocol,
     TypeVar,
-    Union,
 )
 
 T = TypeVar("T")
@@ -54,7 +53,7 @@ class Parser(Generic[T1, T2]):
         return self._buffer == []
 
 
-def read_input_by_char() -> Generator[str, None, None]:
+def input_chars() -> Generator[str, None, None]:
     for line in sys.stdin:
         for char in line:
             yield char
@@ -93,6 +92,11 @@ def flush_all(parsers: Iterable[Parser]):
     return new
 
 
+def parsers_processor(parsers: Iterable, inbound: Iterable):
+    yield from (push_one_to(parsers, new) for new in inbound)
+    yield flush_all(parsers)
+
+
 def main():
     print("Enter Ctrl + Z and Enter on WIndows or Ctrl + D on UNIX-like to send EOF")
 
@@ -114,9 +118,8 @@ def main():
     symbols_parser = Parser(dict_filter(SYMBOLS_DICT), POST_SYMBOLS_BUFFER)
     cmds_parser = Parser(dict_filter(CMDS_DICT))
     parsers = [chars_parser, symbols_parser, cmds_parser]
-    for char in read_input_by_char():
-        push_one_to(parsers, char)
-    buffer = flush_all(parsers)
+    for _ in parsers_processor(parsers, input_chars()):
+        buffer = _
     print(buffer)
 
 
